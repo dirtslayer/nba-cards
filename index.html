@@ -1,0 +1,193 @@
+<html>
+<head>
+	<!--
+	<script src="https://code.jquery.com/jquery-2.1.4.min.js"> </script>
+-->
+
+<script src="https://code.createjs.com/easeljs-0.8.2.min.js"> </script>
+<script src="https://code.createjs.com/tweenjs-0.6.2.min.js"></script>
+<script src="nbasprite/nbasprite.js"></script>
+<script>
+var stage;
+
+function init() {
+	stage = new createjs.Stage("demoCanvas");
+	stage.mouseMoveOutside = true;
+
+	var nbaspriteSheet;
+	var s;
+	nbaspriteSheet = new createjs.SpriteSheet(nbasprite);
+
+	var sprite_on_mousedown = function(evt,s) {
+		//  console.log('sprite_on_mousedown s: ' + s);
+		s.offsetx = evt.stageX - evt.currentTarget.x;
+		s.offsety = evt.stageY - evt.currentTarget.y;
+		s.surpressclick = false;
+	};
+
+	var sprite_on_pressmove = function(evt,s){
+		//  console.log('sprite_on_pressmove s: ' + s);
+		evt.currentTarget.x = evt.stageX - evt.currentTarget.offsetx;
+		evt.currentTarget.y = evt.stageY - evt.currentTarget.offsety;
+		s.back.x = evt.currentTarget.x;
+		s.back.y = evt.currentTarget.y;
+		s.surpressclick = true;
+		stage.update();
+	};
+
+	var sprite_on_click =  function(evt,s) {
+		// dont handle the click if we've been dragging
+		// this is so card doesnt flip after a drag
+		// the only time it is true is if it was dragged
+		// and we shut it off with the click which comes
+		// after the drag is done
+		if (s.surpressclick==true) {
+			s.surpressclick = false;
+			return;
+		}
+		s.back.scaleX = 0;
+		s.back.visible = true;
+		createjs.Tween.get(s).to({scaleX:0, visible:false}, 200).call(handleComplete);
+		function handleComplete() {
+			createjs.Tween.get(s.back).to({scaleX:1},200);
+			s.flipped = true;
+			stage.update();
+		}
+		stage.update();
+	};
+
+	var sprite_draw = function(ctx,ignorecache) {
+		if (this.flipped) {
+			this.back.draw(ctx,ignorecache);
+
+		} else {
+			this.originaldraw(ctx,ignorecache);
+		}
+	}
+
+	// whenever i used nbasprite.animations['nba'] i get a
+	// continuous animation of all the sprites???? use majic 18 for now
+	var nbalogo = new createjs.Sprite( nbaspriteSheet);
+	nbalogo.visible = false;
+	nbalogo.regX = 75;
+	nbalogo.x = 75;
+	nbalogo.gotoAndStop('nba');
+
+	var back_on_mousedown = function(evt,s) {
+		s.back.offsetx = evt.stageX - evt.currentTarget.x;
+		s.back.offsety = evt.stageY - evt.currentTarget.y;
+		s.x = s.back.x;
+		s.y = s.back.y;
+		s.back.surpressclick = false;
+	};
+
+	var back_on_pressmove = function(evt,s) {
+		evt.currentTarget.x = evt.stageX - evt.currentTarget.offsetx;
+		evt.currentTarget.y = evt.stageY - evt.currentTarget.offsety;
+		s.back.surpressclick = true;
+		stage.update();
+	};
+
+	var back_on_click = function(evt,s) {
+		if (s.back.surpressclick == true) {
+			s.surpressclick = false;
+			return;
+		}
+		s.scaleX = 0;
+		s.visible = true;
+		createjs.Tween.get(s.back).to({scaleX:0, visible:false}, 200).call(handleComplete);
+		function handleComplete() {
+			s.flipped = false;
+			createjs.Tween.get(s).to({scaleX:1},200);
+			stage.update();
+		}
+		stage.update();
+	};
+
+	s = undefined;
+	// 2 columns
+	var row = 1;
+	var col = 1;
+	var leftpad = 50;
+	var toppad = 50;
+	var colwidth = 160;
+	var rowheight = 110;
+	var ncol = 4;
+
+	for(var sprite in nbasprite.animations){
+		if (sprite==='nba') {
+			continue;
+		}
+		s = new createjs.Sprite(nbaspriteSheet, sprite);
+		s.name = sprite;
+		console.log(s.name);
+		s.regX = 75;
+		s.x =  leftpad + 75 + ((col-1) * colwidth);
+		console.log(s.x);
+		s.y = toppad + ((row -1) * rowheight);
+		//s.x = 75;
+		s.flipped = false;
+		s.originaldraw = s.draw;
+		s.draw = sprite_draw;
+		s.back = nbalogo.clone();
+		s.back.x = s.x;
+		s.back.y = s.y;
+		s.on("mousedown", sprite_on_mousedown,null,false,s);
+		s.on("pressmove", sprite_on_pressmove,null,false,s);
+		s.on("click", sprite_on_click, null, false, s );
+		s.back.on("mousedown", back_on_mousedown, null, false, s);
+		s.back.on("pressmove",back_on_pressmove, null, false, s);
+		s.back.on("click", back_on_click, null, false, s);
+		stage.addChild(s);
+		stage.addChild(s.back);
+		stage.update();
+		col++;
+		if (col>ncol) {
+			col = 1;
+		}
+		row = (col==1)?row+1:row;
+	}
+
+	/* grouping shapes into container cool
+	var circle = new createjs.Shape();
+	circle.graphics.beginFill("red").drawCircle(0, 0, 50);
+
+	var label = new createjs.Text("drag me", "bold 14px Arial", "#FFFFFF");
+	label.textAlign = "center";
+	label.y = -7;
+
+	var dragger = new createjs.Container();
+	dragger.x = dragger.y = 100;
+	dragger.addChild(circle, label);
+	stage.addChild(dragger);
+
+	dragger.on("pressmove",function(evt) {
+	// currentTarget will be the container that the event listener was added to:
+	evt.currentTarget.x = evt.stageX;
+	evt.currentTarget.y = evt.stageY;
+	// make sure to redraw the stage to show the change:
+	stage.update();
+});
+*/
+
+
+createjs.Ticker.addEventListener("tick", handleTick);
+function handleTick(event) {
+	// Actions carried out each tick (aka frame)
+	//console.log('tick');
+	stage.update();
+	if (!event.paused) {
+		// Actions carried out when the Ticker is not paused.
+	}
+}
+
+
+}
+</script>
+</head>
+<body onload="init();" style="margin:0;padding:0; box-sizing: border-box;">
+	<canvas id="demoCanvas" width="1000" height="950" style="background:black">
+		alternate content
+	</canvas>
+</body>
+</html>
