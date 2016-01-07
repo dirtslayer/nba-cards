@@ -1,22 +1,20 @@
 var stage;
 
 var init = function() {
+  window.addEventListener('resize', resizeCanvas, false);
+  window.addEventListener('orientationchange', resizeCanvas, false);
+
+
   stage = new createjs.Stage("demoCanvas");
   createjs.Touch.enable(stage);
   stage.mouseMoveOutside = true;
   var nbaspriteSheet;
   nbaspriteSheet = new createjs.SpriteSheet(nbasprite);
-  var nbalogo = new createjs.Sprite(nbaspriteSheet);
-  nbalogo.visible = false;
-  nbalogo.regX = 75;
-  nbalogo.regY = 50;
-  nbalogo.x = 75;
-  nbalogo.y = 50;
-  nbalogo.gotoAndStop('nba');
+
   var row = 1;
   var col = 1;
   var leftpad = 50;
-  var toppad = 50;
+  var toppad = 100;
   var colwidth = 160;
   var rowheight = 110;
   var ncol = 4;
@@ -26,6 +24,7 @@ var init = function() {
     }
     var newsprite = new createjs.Sprite(nbaspriteSheet, sprite);
     newsprite.name = sprite;
+    newsprite.gotoAndStop(sprite);
     newsprite.regX = 75;
     newsprite.regY = 50;
     newsprite.x = leftpad + 75 + ((col - 1) * colwidth);
@@ -51,6 +50,7 @@ var init = function() {
     row = (col == 1) ? row + 1 : row;
   }
   createjs.Ticker.addEventListener("tick", handleTick);
+  resizeCanvas();
 };
 
 var sprite_on_pressmove = function(evt, s) {
@@ -61,6 +61,7 @@ var sprite_on_pressmove = function(evt, s) {
     s.offsety = evt.stageY - evt.currentTarget.y;
     s.origX = evt.currentTarget.x;
     s.origY = evt.currentTarget.y;
+    stage.setChildIndex(s,stage.children.length - 1);
   }
   evt.currentTarget.x = evt.stageX - s.offsetx;
   evt.currentTarget.y = evt.stageY - s.offsety;
@@ -71,6 +72,17 @@ var sprite_on_pressmove = function(evt, s) {
 
 var flip = function(s) {
   //debug('flip');
+  createjs.Tween.get(s).to({scaleX:0}, 200).call(handleComplete);
+  function handleComplete() {
+    createjs.Tween.get(s).to({scaleX:1},200);
+    if ( s.flipped ) {
+      s.gotoAndStop(s.name);
+      s.flipped = false;
+    } else {
+      s.gotoAndStop('nba');
+      s.flipped = true;
+    }
+  }
 };
 
 // press up can happen without a press move - it is a click
@@ -79,6 +91,7 @@ var sprite_on_pressup = function(evt, s) {
   debug('sprite press up s:' + s);
   if (s.first_press) {
     debug('click');
+    flip(s);
     return;
   }
   var dx = Math.abs(s.origX - s.x);
@@ -86,14 +99,16 @@ var sprite_on_pressup = function(evt, s) {
   var closeenough = ((dx + dy) < 6);
   if (closeenough) {
     debug('close');
+    flip(s);
   }
   s.first_press = true;
 };
 
 
 var debug = function(str) {
-  var de = document.getElementById('debug');
-  de.innerHTML = str;
+  //var de = document.getElementById('debug');
+  //de.innerHTML = str;
+  console.log(str);
 };
 
 
@@ -105,3 +120,23 @@ var handleTick = function(event) {
     // Actions carried out when the Ticker is not paused.
   }
 };
+
+
+function request_full_screen() {
+    var
+      el = document.documentElement
+    , rfs =
+           el.requestFullScreen
+        || el.webkitRequestFullScreen
+        || el.mozRequestFullScreen
+    ;
+    rfs.call(el);
+}
+
+function resizeCanvas() {
+        var ce = document.getElementById('demoCanvas');
+
+        ce.width = document.documentElement.clientWidth ;
+        ce.height = document.documentElement.clientHeight ;
+        stage.update();
+}
