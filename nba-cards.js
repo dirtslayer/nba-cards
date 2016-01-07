@@ -136,7 +136,21 @@ function request_full_screen() {
 function resizeCanvas() {
         var ce = document.getElementById('demoCanvas');
 
-        ce.width = document.documentElement.clientWidth ;
-        ce.height = document.documentElement.clientHeight ;
+        ce.width = window.innerWidth; 
+        ce.height = window.innerHeight;
+        
+        var target_ratio = (ce.height * 10.0) / (ce.width * 10.0);
+        var nrows = 0;
+        var ncols = stage.children.length;
+
+        var row_width = ncols * (card_width + card_padding) + left_pad;
+        var col_height = nrows * (card_height + card_padding) + top_pad;
+
+        var prev_target = (nrows * 10.0) / (ncols * 10.0); 
+       
+        do {
+
+        } while ( prev_target < cur_target 
+
         stage.update();
 }
