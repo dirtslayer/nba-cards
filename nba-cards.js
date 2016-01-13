@@ -1,4 +1,9 @@
 var stage;
+var card_width;
+var card_height;
+var card_padding;
+var left_pad;
+var top_pad;
 
 var init = function() {
   window.addEventListener('resize', resizeCanvas, false);
@@ -27,21 +32,17 @@ var init = function() {
     newsprite.gotoAndStop(sprite);
     newsprite.regX = 75;
     newsprite.regY = 50;
+    newsprite.scaleX = 1.5;
+    newsprite.scaleY = 1.5;
     newsprite.x = leftpad + 75 + ((col - 1) * colwidth);
     newsprite.y = toppad + ((row - 1) * rowheight);
-    //	newsprite.back = nbalogo.clone();
-    //	newsprite.back.x = newsprite.x;
-    //	newsprite.back.y = newsprite.y;
     newsprite.flipped = false;
-    //		newsprite.back.visible = false;
-    //		newsprite.back.back = 'undefined';
     newsprite.offsetx = 10000;
     newsprite.offsety = 10000;
     newsprite.first_press = true;
     newsprite.on("pressmove", sprite_on_pressmove, null, false, newsprite);
     newsprite.on("pressup", sprite_on_pressup, null, false, newsprite);
     stage.addChild(newsprite);
-    //		stage.addChild(newsprite.back);
     stage.update();
     col++;
     if (col > ncol) {
@@ -65,8 +66,6 @@ var sprite_on_pressmove = function(evt, s) {
   }
   evt.currentTarget.x = evt.stageX - s.offsetx;
   evt.currentTarget.y = evt.stageY - s.offsety;
-  //	s.back.x = evt.currentTarget.x;
-  //	s.back.y = evt.currentTarget.y;
   stage.update();
 };
 
@@ -148,9 +147,9 @@ function resizeCanvas() {
 
         var prev_target = (nrows * 10.0) / (ncols * 10.0); 
        
-        do {
+/*        do {
 
         } while ( prev_target < cur_target 
-
+*/
         stage.update();
 }
